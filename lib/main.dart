@@ -11,15 +11,25 @@ import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
+// Tracks whether Firebase initialized successfully.
+// False on web (no firebase_options) or when google-services.json is missing.
+bool _firebaseReady = false;
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await Firebase.initializeApp();
+    _firebaseReady = true; // Firebase is available — auth will work
   } catch (_) {
-    // Firebase may fail if google-services.json is missing; app still runs local features
+    // Firebase not configured (web demo / missing google-services.json)
+    // App will run in local-only mode — all non-auth features work fine
   }
-  await NotificationService.instance.init();
-  await NotificationService.instance.scheduleDailyReminder();
+  try {
+    await NotificationService.instance.init();
+    await NotificationService.instance.scheduleDailyReminder();
+  } catch (_) {
+    // Notifications not supported on web — silently skip
+  }
 
   runApp(const RakshaKavachApp());
 }
@@ -38,7 +48,7 @@ class RakshaKavachApp extends StatelessWidget {
         title: 'Raksha-Kavach',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          brightness: Brightness.light,
+          brightness: Brightness.dark,
           scaffoldBackgroundColor: Colors.black,
           primaryColor: const Color(0xFFFFC107),
           colorScheme: ColorScheme.fromSeed(
@@ -83,6 +93,11 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // If Firebase didn't initialize (web demo / no config),
+    // skip login and go straight to HomeScreen for UI testing.
+    if (!_firebaseReady) {
+      return const HomeScreen();
+    }
     return StreamBuilder(
       stream: AuthService.instance.authStateChanges(),
       builder: (context, snapshot) {
