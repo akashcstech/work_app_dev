@@ -21,6 +21,16 @@ class _LoginScreenState extends State<LoginScreen> {
       _error = null;
     });
     try {
+      // Web demo mode — Firebase not configured, accept any credentials
+      if (!AuthService.firebaseReady) {
+        if (_email.text.trim().isEmpty || _password.text.length < 6) {
+          setState(() => _error = 'Enter a valid email and password (min 6 chars)');
+          return;
+        }
+        AuthService.instance.webLogin();
+        return;
+      }
+      // Firebase available — real auth
       if (_isRegister) {
         await AuthService.instance.signUp(_email.text, _password.text);
       } else {

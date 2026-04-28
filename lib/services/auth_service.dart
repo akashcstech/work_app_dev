@@ -1,10 +1,19 @@
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
   AuthService._();
   static final AuthService instance = AuthService._();
 
-  // Safely returns FirebaseAuth instance — null if Firebase not initialized
+  // Set to true only after Firebase.initializeApp() succeeds
+  static bool firebaseReady = false;
+
+  // Local auth state for web demo (when Firebase not configured)
+  final ValueNotifier<bool> webLoggedIn = ValueNotifier(false);
+  void webLogin() => webLoggedIn.value = true;
+  void webLogout() => webLoggedIn.value = false;
+
+  // Safely returns FirebaseAuth — null if not initialized
   FirebaseAuth? get _auth {
     try {
       return FirebaseAuth.instance;
@@ -13,7 +22,6 @@ class AuthService {
     }
   }
 
-  // Returns empty stream if Firebase not initialized (web demo mode)
   Stream<User?> authStateChanges() {
     try {
       return _auth?.authStateChanges() ?? const Stream.empty();
@@ -22,7 +30,6 @@ class AuthService {
     }
   }
 
-  // Returns null if Firebase not initialized
   User? get currentUser {
     try {
       return _auth?.currentUser;

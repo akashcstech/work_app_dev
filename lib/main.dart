@@ -11,18 +11,14 @@ import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
-// Tracks whether Firebase initialized successfully.
-// False on web (no firebase_options) or when google-services.json is missing.
-bool _firebaseReady = false;
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await Firebase.initializeApp();
-    _firebaseReady = true; // Firebase is available — auth will work
+    AuthService.firebaseReady = true; // Firebase available — full auth works
   } catch (_) {
     // Firebase not configured (web demo / missing google-services.json)
-    // App will run in local-only mode — all non-auth features work fine
+    // App runs in local-only mode — all non-auth features still work
   }
   try {
     await NotificationService.instance.init();
@@ -93,11 +89,17 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // If Firebase didn't initialize (web demo / no config),
-    // skip login and go straight to HomeScreen for UI testing.
-    if (!_firebaseReady) {
-      return const HomeScreen();
+    // Web demo mode: Firebase not configured — use local ValueNotifier
+    // Shows LoginScreen by default; switches to HomeScreen after webLogin()
+    if (!AuthService.firebaseReady) {
+      return ValueListenableBuilder<bool>(
+        valueListenable: AuthService.instance.webLoggedIn,
+        builder: (_, loggedIn, __) {
+          return loggedIn ? const HomeScreen() : const LoginScreen();
+        },
+      );
     }
+    // Firebase available — use real auth stream
     return StreamBuilder(
       stream: AuthService.instance.authStateChanges(),
       builder: (context, snapshot) {

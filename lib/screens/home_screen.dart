@@ -26,7 +26,13 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             tooltip: 'Logout',
             icon: const Icon(Icons.logout),
-            onPressed: () => AuthService.instance.signOut(),
+            onPressed: () {
+              if (!AuthService.firebaseReady) {
+                AuthService.instance.webLogout(); // Web demo: go back to LoginScreen
+              } else {
+                AuthService.instance.signOut(); // Real Firebase logout
+              }
+            },
           )
         ],
       ),
@@ -99,82 +105,103 @@ class HomeScreen extends StatelessWidget {
                     ),
                   )),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _SecondaryButton(
-                      icon: Icons.report_problem,
-                      label: 'INCIDENT LOG',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const IncidentLogScreen(),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _SecondaryButton(
-                      icon: Icons.quiz,
-                      label: 'DAILY QUIZ',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const QuizScreen(),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
+        ),
+      ),
+      bottomNavigationBar: _RakshaBottomNav(
+        onHomeTap: () {},
+        onQuizTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const QuizScreen()),
+        ),
+        onProfileTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const IncidentLogScreen()),
         ),
       ),
     );
   }
 }
 
-class _SecondaryButton extends StatelessWidget {
+class _RakshaBottomNav extends StatelessWidget {
+  final VoidCallback onHomeTap;
+  final VoidCallback onQuizTap;
+  final VoidCallback onProfileTap;
+
+  const _RakshaBottomNav({
+    required this.onHomeTap,
+    required this.onQuizTap,
+    required this.onProfileTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 80,
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        border: Border(
+          top: BorderSide(color: Color(0xFFFFC107), width: 2),
+        ),
+        boxShadow: [
+          BoxShadow(color: Colors.black54, blurRadius: 12, offset: Offset(0, -4)),
+        ],
+      ),
+      child: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _NavCircleButton(
+              icon: Icons.home,
+              iconColor: Colors.black,
+              onTap: onHomeTap,
+            ),
+            _NavCircleButton(
+              icon: Icons.quiz,
+              iconColor: Colors.black,
+              onTap: onQuizTap,
+            ),
+            _NavCircleButton(
+              icon: Icons.person,
+              iconColor: Colors.white,
+              onTap: onProfileTap,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavCircleButton extends StatelessWidget {
   final IconData icon;
-  final String label;
+  final Color iconColor;
   final VoidCallback onTap;
 
-  const _SecondaryButton({
+  const _NavCircleButton({
     required this.icon,
-    required this.label,
+    required this.iconColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
-          decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFFFC107), width: 2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, color: const Color(0xFFFFC107), size: 32),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFFFC107),
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
-            ],
-          ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: const BoxDecoration(
+          color: Color(0xFFFFC107),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black38,
+              blurRadius: 8,
+              offset: Offset(0, 3),
+            ),
+          ],
         ),
+        child: Icon(icon, color: iconColor, size: 28),
       ),
     );
   }
